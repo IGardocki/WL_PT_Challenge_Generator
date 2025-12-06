@@ -1,8 +1,17 @@
 #!/bin/bash
 
 # --- Configuration ---
-# Replace YOUR_API_KEY with your actual API-Ninjas API Key
-API_KEY="YOUR_API_KEY"
+
+# 1. Source the API key from the separate file.
+# The file api_key.txt must contain the line: API_KEY="YOUR_ACTUAL_KEY"
+source api_key.txt
+
+# Check if API_KEY was successfully loaded
+if [ -z "$API_KEY" ]; then
+  echo "Error: API_KEY variable is not set. Please ensure api_key.txt exists and contains API_KEY=\"YOUR_KEY\"."
+  exit 1
+fi
+
 ENDPOINT="https://api.api-ninjas.com/v1/exercises?type=plyometrics"
 NUM_EXERCISES=3
 MAX_REPS=200
@@ -12,13 +21,10 @@ get_random_reps() {
   echo $((1 + $RANDOM % $MAX_REPS))
 }
 
-# 1. Send Request and Filter JSON using curl and jq
+# 2. Send Request and Filter JSON using curl and jq
 echo "Fetching and filtering exercises..."
 
 # Send the request, filter the results for equipment="body_only",
-# and store the filtered array as a single string.
-# .[] | select(.equipment == "body_only") | tostring + "\n"
-# This converts each matching object to a string on a new line.
 FILTERED_EXERCISES=$(
   curl -s -X GET "$ENDPOINT" \
   -H "X-Api-Key: $API_KEY" |
@@ -31,7 +37,7 @@ if [ -z "$FILTERED_EXERCISES" ]; then
   exit 1
 fi
 
-# 2. Randomly Select Three Exercises
+# 3. Randomly Select Three Exercises
 echo "Selecting $NUM_EXERCISES random exercises..."
 
 # Count the number of available exercises (lines in the string)
@@ -47,7 +53,7 @@ fi
 # Use shuf (shuffle) to randomly select lines (exercises) and limit to NUM_TO_SELECT
 SELECTED_EXERCISES=$(echo "$FILTERED_EXERCISES" | shuf -n "$NUM_TO_SELECT")
 
-# 3. Process and Print Results
+# 4. Process and Print Results
 echo -e "\n--- Workout Plan ---\n"
 
 # Loop through each selected exercise string
@@ -59,10 +65,10 @@ echo "$SELECTED_EXERCISES" | while IFS= read -r exercise_json_string; do
   name=$(echo "$exercise_object" | jq -r '.name')
   target=$(echo "$exercise_object" | jq -r '.target')
 
-  # 4. Select Rep Range
+  # 5. Select Rep Range
   reps=$(get_random_reps)
 
-  # 5. Print out the result in the specified format
+  # 6. Print out the result in the specified format
   echo "$name (Target: $target): $reps reps"
 done
 
